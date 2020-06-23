@@ -1,0 +1,15 @@
+/target/
+target/classes
+target/surefire
+target/maven-archiver
+target/site
+.class
+# Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
+target/generated-sources/
+.classpath
+.project
+.settings/
+/logs/
+.idea/
+*.iml
+.DS_Store
