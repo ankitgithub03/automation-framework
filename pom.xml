@@ -17,6 +17,8 @@
     <lombok.version>1.18.12</lombok.version>
     <assertj-core.version>3.16.1</assertj-core.version>
     <org.json.version>20200518</org.json.version>
+    <commons-lang3.version>3.10</commons-lang3.version>
+    <fillo.version>1.21</fillo.version>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <repository-id>test-framework</repository-id>
     <repository-url>http://nexus.bsbportal.com/nexus/content/repositories/test-framework/</repository-url>
@@ -85,6 +87,15 @@
       <artifactId>json</artifactId>
       <version>${org.json.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang3.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.codoid.products</groupId>
+      <artifactId>fillo</artifactId>
+      <version>${fillo.version}</version>
+    </dependency>
   </dependencies>
 </project>
