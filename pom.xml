@@ -97,5 +97,27 @@
       <artifactId>fillo</artifactId>
       <version>${fillo.version}</version>
     </dependency>
+    
+    <dependency>
+		<groupId>io.qameta.allure</groupId>
+		<artifactId>allure-testng</artifactId>
+		<version>2.13.0</version>
+	</dependency>
+	<dependency>
+		<groupId>com.github.stephenc.monte</groupId>
+		<artifactId>monte-screen-recorder</artifactId>
+		<version>0.7.7.0</version>
+	</dependency>
   </dependencies>
+  
+  <reporting>
+	<excludeDefaults>true</excludeDefaults>
+	<plugins>
+		<plugin>
+			<groupId>io.qameta.allure</groupId>
+			<artifactId>allure-maven</artifactId>
+			<version>2.9</version>
+		</plugin>
+	</plugins>
+</reporting>
 </project>
