@@ -1,4 +1,4 @@
-package report;
+package report.allure;
 
 import java.awt.AWTException;
 import java.awt.Dimension;

@@ -7,7 +7,7 @@ import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import report.Reporting;
+import report.allure.Reporting;
 
 public class CurlLoggingInterceptor implements HttpRequestInterceptor {
 
