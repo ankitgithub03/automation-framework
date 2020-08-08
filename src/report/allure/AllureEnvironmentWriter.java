@@ -1,4 +1,4 @@
-package report;
+package report.allure;
 
 import com.google.common.collect.ImmutableMap;
 import org.w3c.dom.Document;
@@ -83,10 +83,8 @@ public class AllureEnvironmentWriter {
                     new File( customResultsPath + "environment.xml"));
             transformer.transform(source, result);
             System.out.println("Allure environment data saved.");
-        } catch (ParserConfigurationException pce) {
+        } catch (ParserConfigurationException | TransformerException pce) {
             pce.printStackTrace();
-        } catch (TransformerException tfe) {
-            tfe.printStackTrace();
         }
     }
 }

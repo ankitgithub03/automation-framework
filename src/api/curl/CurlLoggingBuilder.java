@@ -7,7 +7,7 @@ import io.restassured.config.RestAssuredConfig;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
-import report.Reporting;
+import report.allure.Reporting;
 
 public class CurlLoggingBuilder {
   

@@ -1,6 +1,6 @@
-package ui.app.iOS;
+package ui.app.ios;
 
-public interface iOSCommands {
+public interface IosCommands {
 
   String physicallyConnected_iOS_Devices = "idevice_id -l";
 

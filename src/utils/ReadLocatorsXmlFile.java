@@ -4,6 +4,12 @@ import java.io.File;
 import java.util.HashMap;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -12,7 +18,7 @@ import org.w3c.dom.NodeList;
 
 public class ReadLocatorsXmlFile {
 
-
+  private static Logger log = LoggerFactory.getLogger(ReadLocatorsXmlFile.class);
 
   /**
    * Read all the values from the given xml file and saved into HashMap
@@ -21,7 +27,7 @@ public class ReadLocatorsXmlFile {
    * @author Ankit
    * 
    */
-  public HashMap<String, HashMap<String, HashMap<String, String>>> getObjectRepository(String dir,
+  public HashMap<String, HashMap<String, HashMap<String, String>>> getLocators(String dir,
       String xmlFileName) {
     HashMap<String, HashMap<String, HashMap<String, String>>> map = new HashMap<>();
     try {
@@ -83,5 +89,53 @@ public class ReadLocatorsXmlFile {
       throw new Exception("Unable to read XML file");
     }
     return doc;
+  }
+
+  /**
+   * Get XML pass node value
+   *
+   * @param path
+   * @param parentNode
+   * @return
+   */
+  public HashMap<String, String> getXMLNodeValue(String path, String parentNode){
+    HashMap<String, String> map = new HashMap<>();
+    try
+    {
+      File fXmlFile = new File(path);
+
+      if(!fXmlFile.exists()) {
+        System.err.println(path+" does not exists");
+        return map;
+      }
+
+      DocumentBuilderFactory dbFac = DocumentBuilderFactory.newInstance();
+      DocumentBuilder docBuilder = dbFac.newDocumentBuilder();
+      Document document = docBuilder.parse(fXmlFile);
+
+      XPathFactory xPathFactory = XPathFactory.newInstance();
+      XPath xpath = xPathFactory.newXPath();
+
+      XPathExpression expr = xpath.compile(parentNode);
+      Object obj = expr.evaluate(document, XPathConstants.NODESET);
+      if(obj != null){
+        Node node = ((NodeList)obj).item(0);
+        if(node != null){
+          NodeList nl = node.getChildNodes();
+          for (int child = 0; child < nl.getLength(); child++) {
+            String nodeName = nl.item(child).getNodeName().trim();
+            String nodeValue = nl.item(child).getTextContent().trim();
+            nodeValue = System.getProperty(nodeName) != null && !System.getProperty(nodeName).trim().equalsIgnoreCase("") ? System.getProperty(nodeName).trim() : nodeValue;
+            map.put(nodeName, nodeValue);
+          }
+        }
+      }
+    }
+    catch (Exception e){
+      log.info("Threw a Exception in BaseFramework :: while reading xml, full stack trace follows:", e);
+      e.printStackTrace();
+      System.err.println("Unable to read XML file");
+    }
+    return map;
   }
 }

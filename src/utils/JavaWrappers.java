@@ -20,9 +20,13 @@ import java.util.Random;
 import java.util.TimeZone;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class JavaWrappers {
+
+  static Logger log = LoggerFactory.getLogger(JavaWrappers.class);
 
   public static String getFormatedText(String value, String... params) {
     value = MessageFormat.format(value, (Object[]) params);
@@ -154,13 +158,13 @@ public class JavaWrappers {
 
   /**
    * Return time in (HH:MM:ss) where
-   * @param starttime in mili second
-   * @param endtime   in mili second
+   * @param startTime in mili second
+   * @param endTime   in mili second
    * @return
    * @author Ankit
    */
-  public static String getTime(long starttime, long endtime) {
-    long diff = endtime - starttime;
+  public static String getTime(long startTime, long endTime) {
+    long diff = endTime - startTime;
     long diffSeconds = diff / 1000 % 60;
     long diffMinutes = diff / (60 * 1000) % 60;
     long diffHours = diff / (60 * 60 * 1000) % 24;
@@ -558,6 +562,29 @@ public class JavaWrappers {
     //call delete to delete files and empty directory
     file.delete();
     System.out.println("Deleted file/folder: " + file.getAbsolutePath());
+  }
+
+  public static String toCamelCase(String s){
+    String[] parts = s.split(" ");
+    String camelCaseString = "";
+    for (String part : parts){
+      camelCaseString = camelCaseString + toProperCase(part) + " ";
+    }
+    return camelCaseString.trim();
+  }
+
+  private static String toProperCase(String s) {
+    return s.substring(0, 1).toUpperCase() +
+        s.substring(1).toLowerCase();
+  }
+
+  public static void sleep(long seconds)  {
+    try {
+      Thread.sleep(seconds * 1000);
+    }catch (Exception e){
+      e.printStackTrace();
+      log.info("Threw a Exception in BaseUtil::wait, full stack trace follows:", e);
+    }
   }
 
 

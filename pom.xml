@@ -11,7 +11,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <appium.version>7.3.0</appium.version>
     <testng.version>7.1.0</testng.version>
-    <cucumber-testng.version>6.1.1</cucumber-testng.version>
+    <cucumber.version>4.4.0</cucumber.version>
     <rest-assured.version>4.3.0</rest-assured.version>
     <webdrivermanager.version>4.0.0</webdrivermanager.version>
     <lombok.version>1.18.12</lombok.version>
@@ -19,9 +19,12 @@
     <org.json.version>20200518</org.json.version>
     <commons-lang3.version>3.10</commons-lang3.version>
     <fillo.version>1.21</fillo.version>
+    <allure-testng.version>2.13.0</allure-testng.version>
+    <allure-maven.version>2.9</allure-maven.version>
+    <aws.version>1.11.106</aws.version>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <repository-id>test-framework</repository-id>
-    <repository-url>http://nexus.bsbportal.com/nexus/content/repositories/test-framework/</repository-url>
+    <repository-id>automation-framework</repository-id>
+<!--    <repository-url>http://nexus.xyz.com/nexus/content/repositories/automation-framework/</repository-url>-->
   </properties>
   <build>
   <sourceDirectory>src</sourceDirectory>
@@ -53,8 +56,26 @@
     <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-testng</artifactId>
-      <version>${cucumber-testng.version}</version>
+      <version>${cucumber.version}</version>
     </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-java</artifactId>
+      <version>${cucumber.version}</version>
+    </dependency>
+
+    <!--    <dependency>-->
+<!--      <groupId>io.cucumber</groupId>-->
+<!--      <artifactId>cucumber-picocontainer</artifactId>-->
+<!--      <version>${cucumber-testng.version}</version>-->
+<!--    </dependency>-->
+<!--    <dependency>-->
+<!--      <groupId>io.cucumber</groupId>-->
+<!--      <artifactId>cucumber-jvm-deps</artifactId>-->
+<!--      <version>1.0.6</version>-->
+<!--    </dependency>-->
+
+
     <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
@@ -101,13 +122,28 @@
     <dependency>
 		<groupId>io.qameta.allure</groupId>
 		<artifactId>allure-testng</artifactId>
-		<version>2.13.0</version>
+		<version>${allure-testng.version}</version>
 	</dependency>
 	<dependency>
 		<groupId>com.github.stephenc.monte</groupId>
 		<artifactId>monte-screen-recorder</artifactId>
 		<version>0.7.7.0</version>
 	</dependency>
+    <dependency>
+      <groupId>net.gpedro.integrations.slack</groupId>
+      <artifactId>slack-webhook</artifactId>
+      <version>1.4.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk</artifactId>
+      <version>${aws.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk</artifactId>
+      <version>${aws.version}</version>
+    </dependency>
   </dependencies>
   
   <reporting>
@@ -116,7 +152,7 @@
 		<plugin>
 			<groupId>io.qameta.allure</groupId>
 			<artifactId>allure-maven</artifactId>
-			<version>2.9</version>
+			<version>${allure-maven.version}</version>
 		</plugin>
 	</plugins>
 </reporting>
