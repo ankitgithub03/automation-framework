@@ -4,7 +4,6 @@ import io.restassured.response.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -13,7 +12,6 @@ import report.custom.FeatureReporting;
 import report.custom.TestReporting;
 import utils.CustomizeAssert;
 import utils.HashMapNew;
-import org.openqa.selenium.Proxy;
 
 public class DriverFactory {
 
