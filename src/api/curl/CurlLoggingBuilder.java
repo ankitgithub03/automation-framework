@@ -7,19 +7,19 @@ import io.restassured.config.RestAssuredConfig;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
-import report.allure.Reporting;
+import report.custom.TestReporting;
 
 public class CurlLoggingBuilder {
   
     private final CurlLoggingInterceptor.Builder interceptorBuilder;
     private final RestAssuredConfig config;
 
-    public CurlLoggingBuilder(RestAssuredConfig config, Reporting reporting) {
+    public CurlLoggingBuilder(RestAssuredConfig config, TestReporting reporting) {
         this.config = config;
         this.interceptorBuilder = CurlLoggingInterceptor.defaultBuilder().setReporting(reporting);
     }
 
-    public CurlLoggingBuilder(Reporting reporting) {
+    public CurlLoggingBuilder(TestReporting reporting) {
         this(RestAssured.config(),reporting);
     }
 

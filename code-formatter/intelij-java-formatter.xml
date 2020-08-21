@@ -137,7 +137,7 @@
       <option name="INDENT_SIZE" value="2"/>
       <option name="TAB_SIZE" value="2"/>
     </indentOptions>
-    <option name="RIGHT_MARGIN" value="80"/>
+    <option name="RIGHT_MARGIN" value="180"/>
     <option name="KEEP_BLANK_LINES_IN_CODE" value="1"/>
     <option name="ALIGN_MULTILINE_PARAMETERS" value="false"/>
     <option name="ALIGN_MULTILINE_FOR" value="false"/>
@@ -161,7 +161,7 @@
       <option name="CONTINUATION_INDENT_SIZE" value="2"/>
       <option name="TAB_SIZE" value="2"/>
     </indentOptions>
-    <option name="RIGHT_MARGIN" value="80"/>
+    <option name="RIGHT_MARGIN" value="180"/>
   </codeStyleSettings>
   <codeStyleSettings language="protobuf">
     <indentOptions>
@@ -169,7 +169,7 @@
       <option name="CONTINUATION_INDENT_SIZE" value="2"/>
       <option name="TAB_SIZE" value="2"/>
     </indentOptions>
-    <option name="RIGHT_MARGIN" value="80"/>
+    <option name="RIGHT_MARGIN" value="180"/>
   </codeStyleSettings>
   <codeStyleSettings language="Python">
     <indentOptions>
@@ -177,7 +177,7 @@
       <option name="CONTINUATION_INDENT_SIZE" value="4"/>
       <option name="TAB_SIZE" value="2"/>
     </indentOptions>
-    <option name="RIGHT_MARGIN" value="80"/>
+    <option name="RIGHT_MARGIN" value="180"/>
     <option name="ALIGN_MULTILINE_PARAMETERS" value="false"/>
     <option name="PARENT_SETTINGS_INSTALLED" value="true"/>
     <option name="KEEP_BLANK_LINES_IN_CODE" value="1"/>
@@ -528,7 +528,7 @@
       <option name="INDENT_SIZE" value="2"/>
       <option name="CONTINUATION_INDENT_SIZE" value="4"/>
     </indentOptions>
-    <option name="RIGHT_MARGIN" value="80"/>
+    <option name="RIGHT_MARGIN" value="180"/>
     <option name="KEEP_BLANK_LINES_BEFORE_RBRACE" value="1"/>
     <option name="BLANK_LINES_BEFORE_IMPORTS" value="0"/>
     <option name="BLANK_LINES_AFTER_IMPORTS" value="0"/>

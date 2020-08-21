@@ -2,6 +2,7 @@ package report.custom;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -17,39 +18,50 @@ import com.google.gson.JsonParser;
 import io.restassured.response.Response;
 import test.DriverFactory;
 import ui.app.android.AndroidUtility;
+import ui.driverUtils.DriverActionsUtils;
 import ui.driverUtils.Drivers;
+import utils.HashMapNew;
 import utils.JavaWrappers;
 
 
 @Data
 public class TestReporting extends FeatureReporting {
 	
-	private OutputStream htmlFile, logfile,proxyFile;
-	private PrintStream printHtml, printLog,printProxyLog;
+	private PrintStream printHtml, printStackTraceLog,printCrashLog,printProxyLog;
 	private String testCaseName = "";
-	private String logFileName ="";
-//	private String debugLogFileName = "";
+	private String stackTraceLogFileName ="";
+	private String crashLogFileName ="";
 	private String proxyFileName="";
 	private String testReportFolder ="";
 	private String testCaseReportPath ="";
 	private int apiRow = 0;
+	private String featureName ="";
+	private String gifFolder ="";
+	private String browserNetworkLogFile ="";
+	private String browserNetworkLogName ="";
+	private String browserNetworkLogJsonFile ="";
+	private String browserNetworkLogJsonName ="";
+	protected HashMapNew sTest = null;
+
+	public TestReporting(HashMapNew sTestDetails) throws IOException {
+		this.sTest = DriverFactory.getWholeTestDetails();
+	}
 	
-	public void initializeTestReport(String testName){
-//		this.testCasePath = JavaWrappers.createDir(testSuitePath, testName).getAbsolutePath();
-//		this.testReport = ts.getIndividulaSuiteReportFolder()+File.separator+"TestCases";
-		this.testReportFolder = DriverFactory.getFeatureReporting().getFeatureReportFolder()+File.separator+"TestCases";
+	public void initializeTestReport(String featureName, String testName) throws IOException {
+		this.featureName = featureName;
+		this.testReportFolder = DriverFactory.getFeatureReport(featureName).getFeatureReportFolder()+File.separator+"TestCases";
+    JavaWrappers.createDir(testReportFolder, testName+"_gif").renameTo(new File(testReportFolder, testName+"_gif"));
+    this.gifFolder = testReportFolder+File.separator+testName+"_gif";
 		this.testCaseName = testName;
-		String name = openFile();
+		testCaseReportPath =openFile();
 		header();
 	}
 	
-	public String initializeApiTestReport(String testName){
-//		this.testCasePath = JavaWrappers.createDir(testSuitePath, testName).getAbsolutePath();
-		this.testReportFolder = DriverFactory.getFeatureReporting().getFeatureReportFolder()+File.separator+"TestCases";
+	public void initializeApiTestReport(String featureName,String testName) throws IOException {
+		this.testReportFolder = DriverFactory.getFeatureReport(featureName).getFeatureReportFolder()+File.separator+"TestCases";
 		this.testCaseName = testName;
 		testCaseReportPath = openFile();
 		header();
-		return testCaseReportPath;
 	}
 	
 	
@@ -57,23 +69,27 @@ public class TestReporting extends FeatureReporting {
 		String fileName = "";
 		try {
 			fileName = this.testCaseName+"_"+ JavaWrappers.getCurrentTime("HH_mm_ss")+".html";
-			logFileName = this.testCaseName+"_"+JavaWrappers.getCurrentTime("HH_mm_ss")+".txt";
-//			proxyFileName = this.testCaseName+"_"+JavaWrappers.getCurrentTime("HH_mm_ss")+".har";
-			String logFile = this.testReportFolder+File.separator+"Logs"+File.separator+ logFileName;
+			stackTraceLogFileName = this.testCaseName+"_stackTraces_"+JavaWrappers.getCurrentTime("HH_mm_ss")+".txt";
+			crashLogFileName = this.testCaseName+"_crashLog_"+JavaWrappers.getCurrentTime("HH_mm_ss")+".txt";
+			String stacktraceLogFile = this.testReportFolder+File.separator+"Logs"+File.separator+ stackTraceLogFileName;
+			String crashLogFile = this.testReportFolder+File.separator+"Logs"+File.separator+ crashLogFileName;
 			proxyFileName = this.testCaseName+"_log_"+JavaWrappers.getCurrentTime("HH_mm_ss")+".txt";
 			String proxyLogFile = this.testReportFolder+File.separator+"Logs"+File.separator+ proxyFileName;
 			String testCaseFile = this.testReportFolder+File.separator+fileName;
-			htmlFile = new FileOutputStream(new File(testCaseFile), true);
+			OutputStream htmlFile = new FileOutputStream(new File(testCaseFile), true);
 			printHtml = new PrintStream(htmlFile);
-//			if (CommonDataMaps.masterConfigValues.get("consoleLogs").equalsIgnoreCase("true")){
-//				String logPath = this.testReport+File.separator+"Logs";
-				logfile = new FileOutputStream(new File(logFile),true);
-				proxyFile = new FileOutputStream(new File(proxyLogFile),true);
-				printLog = new PrintStream(logfile);
+			OutputStream stackTraceLogFileObj = new FileOutputStream(new File(stacktraceLogFile),true);
+			OutputStream crashLogFileObj = new FileOutputStream(new File(crashLogFile),true);
+			OutputStream proxyFile = new FileOutputStream(new File(proxyLogFile),true);
+			  printStackTraceLog = new PrintStream(stackTraceLogFileObj);
+			  printCrashLog = new PrintStream(crashLogFileObj);
 				printProxyLog = new PrintStream(proxyFile);
-//				System.setOut(printlog);
-//				System.setErr(printlog);
-//			}
+				if(DriverFactory.environment.get("projectType").equalsIgnoreCase("web")){
+					browserNetworkLogName =testCaseName+JavaWrappers.getCurrentTime("HH_mm_ss")+".har";
+					browserNetworkLogFile =this.testReportFolder+File.separator+"Logs"+File.separator+ browserNetworkLogName;
+					browserNetworkLogJsonName =testCaseName+JavaWrappers.getCurrentTime("HH_mm_ss")+"1.json";
+					browserNetworkLogJsonFile =this.testReportFolder+File.separator+"Logs"+File.separator+ browserNetworkLogName;
+				}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -82,28 +98,56 @@ public class TestReporting extends FeatureReporting {
 	
 	
 	public void addAppCrashLog() {
-		getHttpLogs();
-		String fileLink = "";
-		boolean crashFound = false;
-		String crashLog = new AndroidUtility().getCrashLog(Drivers.getUdid());
+		String crashLog = new AndroidUtility().getCrashLog(DriverFactory.getTestDetails("udid"));
 		if(!crashLog.isEmpty()) {
-			crashFound = true;
-		}
 		String[] logs = crashLog.split("\n");
 		for(String s : logs) {
-			printLog.append(s);
-			printLog.append(System.getProperty("line.separator"));
+			printCrashLog.append(s);
+			printCrashLog.append(System.getProperty("line.separator"));
 		}
-		printLog.close();
-		if(crashFound) {
-			fileLink = "<a href=\"" + "../TestCases/Logs/"+ logFileName+"\"><b>CrashLog</b></a>";
-			printHtml.println("<br>");
-			printHtml.println("<h3 align='center'> <span style=\"color:blue\">"+fileLink+"</span> </h3>");
-			printHtml.println("<br>");
+		printCrashLog.close();
+			String filePath = "../TestCases/Logs/"+crashLogFileName;
+			DriverFactory.setTestDetails("crashLogsPath",filePath);
 		}
-		completeReport();
 	}
-	
+
+	public void writeStackTrace(StackTraceElement[] trace){
+		for(int i = 0 ; i < trace.length; i++){
+			printStackTraceLog.append(trace[i].toString());
+			printStackTraceLog.append(System.getProperty("line.separator"));
+		}
+		printStackTraceLog.close();
+		String filePath = "../TestCases/Logs/"+ stackTraceLogFileName;
+		DriverFactory.setTestDetails("stackTracePath",filePath);
+	}
+
+	public void addLogFileInReport(){
+		completeTestReportTable();
+		printHtml.println("<br>");
+		printHtml.println("<table width=100%>");
+		printHtml.println("<tr>");
+		if(!DriverFactory.getTestDetails("videoGifPath").isEmpty()){
+			printHtml.println("<td align=center><a HREF='" + DriverFactory.getTestDetails("videoGifPath") + "'><FONT FACE=VERDANA COLOR=BLACK SIZE=2>VIDEO GIF</FONT></A></TD>");
+		}
+		if(!DriverFactory.getTestDetails("stackTracePath").isEmpty()){
+			printHtml.println("<td align=center><a HREF='" + DriverFactory.getTestDetails("stackTracePath") + "'><FONT FACE=VERDANA COLOR=BLACK SIZE=2>SYS TRACE</FONT></A></TD>");
+		}
+		if(!DriverFactory.getTestDetails("crashLogsPath").isEmpty()){
+			printHtml.println("<td align=center><a HREF='" + DriverFactory.getTestDetails("crashLogsPath") + "'><FONT FACE=VERDANA COLOR=BLACK SIZE=2>CRASH LOGS</FONT></A></TD>");
+		}
+		if(!DriverFactory.getTestDetails("browserNetworkLogs").isEmpty()){
+			printHtml.println("<td align=center><a HREF='" + DriverFactory.getTestDetails("browserNetworkLogs") + "'><FONT FACE=VERDANA COLOR=BLACK SIZE=2>NETWORK LOGS</FONT></A></TD>");
+		}
+    printHtml.println("</tr></table>");
+	}
+
+	private void completeTestReportTable(){
+		printHtml.println("</tbody>");
+		printHtml.println("</table>");
+	}
+
+
+
 	private List<LogEntry> orderLogEntries(List<LogEntry> logEntries) {
 		List<LogEntry> newEntries = new ArrayList<>();
 		LogEntry tempEntry;
@@ -119,174 +163,115 @@ public class TestReporting extends FeatureReporting {
 		}
 		return newEntries;
 	}
-	
-	
-	private void getHttpLogs() {
-		printHtml.println("</tbody>");
-		printHtml.println("</table>");
-		/*
-		
-		List<String> logs = ts.getAdbHttpLogs().getAdbLogs();
-		//		List<LogEntry> logEntries = ts.getDriver().manage().logs().get("logcat").filter(Level.ALL);
-		//		List<LogEntry> logEntries = ts.getDriver().manage().logs().get("logcat").getAll();
-		//		logEntries = orderLogEntries(logEntries);
-		//		if(!logEntries.isEmpty()) {
-		//			for (LogEntry entry : logEntries) {
-		//				printProxyLog.append(entry.getMessage());
-		//			}
-		//			printProxyLog.close();
-		//			String fileLink = "<a href=\"" + "../TestCases/Logs/"+ proxyFileName+"\"><b>ProxyLogs</b></a>";
-		//			printhtml.println("<br>");
-		//			printhtml.println("<h3 align='center'> <span style=\"color:blue\">"+fileLink+"</span> </h3>");
-		//			//		printhtml.println("<br>");
-		//			//		printhtml.println("<br>");
-		//		}
-		if(!logs.isEmpty()) {
-			for(String text : logs) {
-				printProxyLog.append(text);
-				printProxyLog.append(System.getProperty("line.separator"));
+
+	private String  createBackendLogFile(){
+		String name = "";
+    try {
+			if (sTest.containsKey("RAW_RESPONSE") && !sTest.get("RAW_RESPONSE").trim().equalsIgnoreCase("")) {
+				name = sTest.get("API_NAME") + "_requestResponse" + System.currentTimeMillis() + ".html";
+				String path = getTestReportFolder()+File.separator+"ScreenShot"+ File.separator + name;
+				FileOutputStream fileOutputStream = new FileOutputStream(path, true);
+				new PrintStream(fileOutputStream).println(
+						"<HTML><BODY><TABLE ALIGN=CENTER style=\"table-layout: fixed; width: 100%\" BORDER=1><THEAD><TR><TH WIDTH=50% ALIGN=LEFT>REQUEST</TH><TH WIDTH=50% ALIGN=LEFT>RESPONSE</TH></TR></THEAD><TR VALIGN=TOP><TD WIDTH=50% style=\"word-wrap: break-word\" ALIGN=LEFT>");
+				new PrintStream(fileOutputStream).println(sTest.get("RAW_REQUEST")
+						+ "</TD><TD WIDTH=50% style=\"word-wrap: break-word\" ALIGN=LEFT>");
+				new PrintStream(fileOutputStream)
+						.println(sTest.get("RAW_RESPONSE") + "</TD></TR></TABLE>");
+				new PrintStream(fileOutputStream).println("</BODY></HTML>");
+				fileOutputStream.close();
+				sTest.remove("API_NAME");
+				sTest.remove("RAW_RESPONSE");
+				sTest.remove("RAW_REQUEST");
 			}
-			printProxyLog.close();
-			String fileLink = "<a href=\"" + "../TestCases/Logs/"+ proxyFileName+"\"><b>ProxyLogs</b></a>";
-			printhtml.println("<br>");
-			printhtml.println("<h3 align='center'> <span style=\"color:blue\">"+fileLink+"</span> </h3>");
-			//		printhtml.println("<br>");
-			//		printhtml.println("<br>");
+		}catch (Exception e){
+    	e.printStackTrace();
 		}
-		*/
+    return name;
 	}
-	
-	
-	
-	
-	/*
-	
-	public String addConsoleLogsToFile(TestSuites ts){
-//		Capabilities cap = ((RemoteWebDriver) ts.getDriver()).getCapabilities();
-				String fileLink = "";
-					try {
-		String browserName = getCurentBrowserName(ts);
-		if (browserName.equalsIgnoreCase("chrome") || browserName.equalsIgnoreCase("ch")){
-			LogEntries logs = ts.getDriver().manage().logs().get("browser");
-			for (LogEntry entry : logs) {
-				//	            System.out.println(new Date(entry.getTimestamp()) + " " + entry.getLevel() + " " + entry.getMessage());
-				if (entry.getLevel() == entry.getLevel().SEVERE)
-					printlog.append(new Date(entry.getTimestamp()) + " " + entry.getLevel() + " " + entry.getMessage()+" "+ System.getProperty("line.separator"));
+
+	private String createLink(String status , String nameOfScreenShot){
+		String link = "";
+		if(!nameOfScreenShot.isEmpty()){
+			if(status.equalsIgnoreCase("pass")){
+				link = "<a href=\"" + "../TestCases/ScreenShot/" + nameOfScreenShot + "\">" + status + "</a>";
 			}
-			printlog.append(System.getProperty("line.separator"));
-			printlog.append(System.getProperty("line.separator"));
-			printlog.append("Performance Logs: "+ System.getProperty("line.separator"));
-			logs = ts.getDriver().manage().logs().get(LogType.PERFORMANCE);
-//			logs = ts.getDriver().manage().logs().get(LogType.
-			printlog.append(System.getProperty("line.separator"));
-			for (LogEntry entry : logs) {
-                 if(entry.toString().contains("\"type\":\"XHR\"") & entry.toString().contains("\"url\":\"https://domain.com/")) {
-//				if (entry.getLevel() == entry.getLevel().SEVERE) {
-					printlog.append(new Date(entry.getTimestamp()) + " " + entry.toString() +" "+ System.getProperty("line.separator"));
-					printlog.append(System.getProperty("line.separator"));
-					printlog.append(System.getProperty("line.separator"));
-				}
+			else if(status.equalsIgnoreCase("Fail")){
+				link = "<a href=\"" + "../TestCases/ScreenShot/" + nameOfScreenShot + "\"><font color='#FF7373'>" + status + "</a>";
 			}
-			printlog.close();
-		
-			//add proxy log:
-//			BrowserMobProxy proxy = ts.getSeleniumDriver().getProxyObject(ts.getSeleniumDriver());
-//			Har harObject = proxy.getHar();
-//			// Write HAR Data in a File
-////			File harFile = new File(pro);
-//			try {
-//				harObject.writeTo(proxyFile);
-//			} catch (IOException ex) {
-//				 System.out.println (ex.toString());
-//			     System.out.println("Could not find file " + proxyFileName);
-//			}
-			
-			fileLink = "<a href=\"" + "../TestCases/Logs/"+ logFileName+"\"><b>Browser_ConsoleLogs</b></a>";
-			printhtml.println("</tbody>");
-			printhtml.println("</table>");
-			printhtml.println("<br>");
-			printhtml.println("<h3 align='center'> <span style=\"color:blue\">"+fileLink+"</span> </h3>");
-			printhtml.println("<br>");
-			completeReport();
 		}
-		}catch(Exception e) {
-			e.printStackTrace();
-		} 
-		return fileLink;
+		else{
+			link = status;
+		}
+		return link;
 	}
-	
-	*/
-	
-	
-	
-	public void log(String taskPerformed, String info, String strPassFail) throws Exception {
-		boolean snapshotPermitted = DriverFactory.environment.get("ScreenshotOnFailure").equalsIgnoreCase("true");
-//		try {
-			String value =  strPassFail.toUpperCase();
+
+	public void log(String taskPerformed, String info, String strPassFail){
+			String value =  JavaWrappers.toCamelCase(strPassFail);
 			String nameOfScreenShot ="";
 			String imgLink = "";
-			if(snapshotPermitted || strPassFail.equalsIgnoreCase("FAIL") || strPassFail.equalsIgnoreCase("WARNING") || strPassFail.startsWith("WAR")) {
-				nameOfScreenShot = ""; //captureScreenShot(ts);
-				if (value.equals("PASS") && (nameOfScreenShot.contains("Image_"))) {
-				imgLink = "<a href=\"" + "../TestCases/ScreenShot/"+ nameOfScreenShot + "\">"+value+"</a>";
-				}
-				else if(nameOfScreenShot.equalsIgnoreCase("UnableToCapture")) {
-					System.out.println("Unable to capture screenshot");
-					value = "UnableToCapture";
-					    imgLink = "UnableToCapture";
-				}
-				else if(nameOfScreenShot.equalsIgnoreCase("secureFlag")) {
-					value = "secureFlag";
-					    imgLink = "secureFlag";
-				}
-				else{
-					imgLink = "<a href=\"" + "../TestCases/ScreenShot/"+ nameOfScreenShot + "\"><font color='#FF7373'>"+value+"</a>";
+			if(!DriverFactory.environment.get("projectType").equalsIgnoreCase("backend") && !sTest.containsKey("RAW_RESPONSE") && sTest.get("RAW_RESPONSE").trim().equalsIgnoreCase("")){
+				if (strPassFail.equalsIgnoreCase("FAIL") || strPassFail.equalsIgnoreCase("WARNING")
+						|| strPassFail.toLowerCase().startsWith("warn") || strPassFail
+						.equalsIgnoreCase("PASS")) {
+					nameOfScreenShot = DriverActionsUtils.getScreenShot().getName();
 				}
 			}
-			else {
-				imgLink = value;
+			else{
+				nameOfScreenShot = createBackendLogFile();
 			}
+					if (value.equalsIgnoreCase("PASS") && ((nameOfScreenShot.contains("Image_")) || (nameOfScreenShot.contains("_requestResponse")))) {
+						imgLink =createLink(value,nameOfScreenShot);
+					} else if (nameOfScreenShot.equalsIgnoreCase("UnableToCapture")) {
+						System.out.println("Unable to capture screenshot");
+						value = "UnableToCapture";
+						imgLink = "UnableToCapture";
+					} else if (nameOfScreenShot.equalsIgnoreCase("secureFlag")) {
+						value = "secureFlag";
+						imgLink = "secureFlag";
+					} else if (value.equalsIgnoreCase("FAIL")){
+						imgLink =createLink(value,nameOfScreenShot);
+					}
+					else
+						imgLink = value;
 			printHtml.append("<tr>");
-
 			printHtml
-			.append("<td width='35%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='35%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='VERDANA' size='2'>"
 					+ taskPerformed + "</font></td>");
 			printHtml
-			.append("<td width='42%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='42%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='VERDANA' size='2'>"
 					+ info + "</font></td>");
-			if (strPassFail.equalsIgnoreCase("PASS")) {
+			if (strPassFail.equalsIgnoreCase("Pass")) {
 				printHtml
 						.append(
-								"<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#000000' face='Tahoma' size='2'>"
+								"<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#000000' face='VERDANA' size='2'>"
 										+ imgLink + "</font></b></td>");
 			}
 			else if(strPassFail.equalsIgnoreCase("done")){
 				printHtml
 						.append(
-								"<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#000000' face='Tahoma' size='2'>Done</font></b></td>");
+								"<td width='10%' bgcolor='' valign='middle' align='center'><font color='#000000' face='VERDANA' size='2'>Done</font></td>");
 			}
 			else if (strPassFail.equalsIgnoreCase("FAIL")) {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='VERDANA' size='2'>"
 						+imgLink+ "</font></b></td>");
 //				throw new Exception("failures came");
 			} else if (strPassFail.equals("")){
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='Tahoma' size='2'></font></td>");	
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><font color='#FF7373' face='VERDANA' size='2'></font></td>");
 			}
 			else {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='VERDANA' size='2'>"
 						+imgLink+"</font></b></td>");
 			}
 			printHtml
-			.append("<td width='13%' bgcolor='' valign='middle' align='center' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='13%' bgcolor='' valign='middle' align='center' ><font color='#000000' face='VERDANA' size='2'>"
 					+ JavaWrappers.getCurrentTime("HH:mm:ss") + "</font></td>");	
 			printHtml.append("</tr>");
-			
-			if (strPassFail.toUpperCase().equals("FAIL")){
-				throw new Exception("failures came");
-			}
+//			if (strPassFail.toUpperCase().equals("FAIL")){
+//				throw new Exception("failures came");
+//			}
 	}
 	
 	
@@ -302,36 +287,36 @@ public class TestReporting extends FeatureReporting {
 			printHtml.append("<tr>");
 			requestDetails = requestDetails.replaceAll("\n", "<br/>");
 			printHtml
-			.append("<td width='35%' bgcolor='' valign='top' align='' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='35%' bgcolor='' valign='top' align='' ><font color='#000000' face='VERDANA' size='2'>"
 					+ requestDetails + "</font></td>");
 			if (rs == null){
 				printHtml
-				.append("<td width='42%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='Tahoma' size='2'>"
+				.append("<td width='42%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='VERDANA' size='2'>"
 						+ "<b>Api Response is NULL</b>");
 				printHtml.append("</font></td>");
 			}
 			else{
 			printHtml
-			.append("<td width='42%' bgcolor='#D3D3D3' valign='top' align='justify' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='42%' bgcolor='#D3D3D3' valign='top' align='justify' ><font color='#000000' face='VERDANA' size='2'>"
 					+ "<b>Api Response_"+rs.getStatusCode()+", Time taken: "+rs.getTime()+" millisec</b>");
 			formatResponse(rs);
 			printHtml.append("</font></td>");
 			}
 			if (strPassFail.toUpperCase().equals("PASS")) {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#000000' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#000000' face='VERDANA' size='2'>"
 						+imgLink+ "</font></b></td>");
 			} else if (strPassFail.toUpperCase().equals("FAIL")) {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='VERDANA' size='2'>"
 						+imgLink+ "</font></b></td>");
 			} else {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='VERDANA' size='2'>"
 						+imgLink+"</font></b></td>");
 			}
 			printHtml
-			.append("<td width='13%' bgcolor='' valign='middle' align='center' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='13%' bgcolor='' valign='middle' align='center' ><font color='#000000' face='VERDANA' size='2'>"
 					+ JavaWrappers.getCurrentTime("HH:mm:ss") + "</font></td>");	
 			printHtml.append("</tr>");
 //			if (strPassFail.toUpperCase().equals("FAIL")){
@@ -353,26 +338,26 @@ public class TestReporting extends FeatureReporting {
 			imgLink = value;
 			printHtml.append("<tr>");
 			printHtml
-			.append("<td width='35%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='35%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='VERDANA' size='2'>"
 					+ taskPerformed + "</font></td>");
 			printHtml
-			.append("<td width='42%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='42%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='VERDANA' size='2'>"
 					+ info + "</font></td>");
 			if (strPassFail.toUpperCase().equals("PASS")) {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#000000' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#000000' face='VERDANA' size='2'>"
 						+imgLink+ "</font></b></td>");
 			} else if (strPassFail.toUpperCase().equals("FAIL")) {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='VERDANA' size='2'>"
 						+imgLink+ "</font></b></td>");
 			} else {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='VERDANA' size='2'>"
 						+imgLink+"</font></b></td>");
 			}
 			printHtml
-			.append("<td width='13%' bgcolor='' valign='middle' align='center' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='13%' bgcolor='' valign='middle' align='center' ><font color='#000000' face='VERDANA' size='2'>"
 					+ JavaWrappers.getCurrentTime("HH:mm:ss") + "</font></td>");	
 			printHtml.append("</tr>");
 
@@ -441,26 +426,26 @@ public class TestReporting extends FeatureReporting {
 			printHtml.append("<tr>");
 
 			printHtml
-			.append("<td width='35%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='35%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='VERDANA' size='2'>"
 					+ taskPerformed + "</font></td>");
 			printHtml
-			.append("<td width='42%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='42%' bgcolor='' valign='top' align='justify' ><font color='#000000' face='VERDANA' size='2'>"
 					+ info + "</font></td>");
 			if (strPassFail.toUpperCase().equals("PASS")) {
 				printHtml
-				.append("<td width='18%' bgcolor='' valign='middle' align='center'><b><font color='#000000' face='Tahoma' size='2'>"
+				.append("<td width='18%' bgcolor='' valign='middle' align='center'><b><font color='#000000' face='VERDANA' size='2'>"
 						+imgLink+ "</font></b></td>");
 			} else if (strPassFail.toUpperCase().equals("FAIL")) {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='VERDANA' size='2'>"
 						+imgLink+ "</font></b></td>");
 			} else {
 				printHtml
-				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='Tahoma' size='2'>"
+				.append("<td width='10%' bgcolor='' valign='middle' align='center'><b><font color='#FF7373' face='VERDANA' size='2'>"
 						+imgLink+"</font></b></td>");
 			}
 			printHtml
-			.append("<td width='13%' bgcolor='' valign='middle' align='center' ><font color='#000000' face='Tahoma' size='2'>"
+			.append("<td width='13%' bgcolor='' valign='middle' align='center' ><font color='#000000' face='VERDANA' size='2'>"
 					+ JavaWrappers.getCurrentTime("HH:mm:ss") + "</font></td>");	
 			printHtml.append("</tr>");
 
@@ -475,7 +460,6 @@ public class TestReporting extends FeatureReporting {
 
 	public void header() {
 		try {
-//			String complementryInfo = " for <span style=\"color:red\">"+suiteReporting.getFlavor()+"</span>";
 			printHtml.println("</table>");
 			printHtml.println("<html>");
 			printHtml.println("<title> Test Case Report </title>");
@@ -499,22 +483,33 @@ public class TestReporting extends FeatureReporting {
        "}"+
        "}"+
 					"</script>");
-//			printhtml.println("<font face='Tahoma'size='2'>");
-//			printhtml.println("<h3 align='right' ><font color='#000000' face='Tahoma' size='3'></font></h3>");
-//			printhtml.println("<h3 align='center'>Environment : <span style=\"color:grey\">"+env+"</span> </h3>");
-			printHtml.println("<h3 align='center'>TestCase : <span style=\"color:grey\">"+testCaseName+"</span> </h3>");
+			String driverType = DriverFactory.environment.get("driverType");
 			printHtml.println("<br>");
+			printHtml.println("<TABLE BORDER=2 CELLPADDING=2 CELLSPACING=1 style='border-collapse:collapse;width:100%;word-break: break-all'>");
+			printHtml.println("<tr><td BGCOLOR='White'=20%><FONT FACE=VERDANA COLOR=BLACK SIZE=2><B>Module </B></FONT></td>");
+			printHtml.println("<td COLSPAN=8 BGCOLOR='White'><FONT FACE=VERDANA COLOR=BLACK SIZE=2>" + featureName + "</FONT></td></tr>");
+			printHtml.println("<tr><td BGCOLOR='White'=20%><FONT FACE=VERDANA COLOR=BLACK SIZE=2><B>Execution on </B></FONT></td>");
+			if(driverType.equalsIgnoreCase("android") || driverType.equalsIgnoreCase("ios")) {
+				printHtml.println("<td COLSPAN=8 BGCOLOR='White'><FONT FACE=VERDANA COLOR=BLACK SIZE=2>" + DriverFactory.getTestDetails("deviceName")+"/"+DriverFactory.getTestDetails("deviceOsVersion")  + "</FONT></td></tr>");
+			}
+			else{
+				printHtml.println("<td COLSPAN=8 BGCOLOR='White'><FONT FACE=VERDANA COLOR=BLACK SIZE=2><B>" + JavaWrappers.toCamelCase(driverType)+ "</B></FONT></td></tr>");
+			}
+			printHtml.println("<tr><td BGCOLOR='White'=20%><FONT FACE=VERDANA COLOR=BLACK SIZE=2><B>Test Case </B></FONT></td>");
+			printHtml.println("<td COLSPAN=8 BGCOLOR='White'><FONT FACE=VERDANA COLOR=BLACK SIZE=2>" + DriverFactory.getTestDetails("testCaseName") + "</FONT></td></tr>");
+			printHtml.println("</TABLE><BR/>");
+//			printHtml.println("<br>");
 //			printhtml.println("<table border='0' width='100%' height='47'>");
 			printHtml.println("<table class='tg' border='2' style='border-collapse:collapse;width:100%;word-break: break-all'>");
 			printHtml.println("<tr bgcolor='#92DAEA'>");
 			printHtml
-			.println("<td width='35%' bgcolor='' align='center'><b><font color='#000000' face='Tahoma' size='2'>TaskPerformed</font></b></td>");
+			.println("<td width='35%' bgcolor='' align='center'><b><font color='#000000' face='VERDANA' size='2'>Steps</font></b></td>");
 			printHtml
-			.println("<td width='42%' bgcolor=''align='center'><b><font color='#000000' face='Tahoma' size='2'>Info</font></b></td>");
+			.println("<td width='42%' bgcolor=''align='center'><b><font color='#000000' face='VERDANA' size='2'>Info</font></b></td>");
 			printHtml
-			.println("<td width='10%' bgcolor='' align='center'><b><font color='#000000' face='Tahoma' size='2'>Status</font></b></td>");
+			.println("<td width='10%' bgcolor='' align='center'><b><font color='#000000' face='VERDANA' size='2'>Result</font></b></td>");
 			printHtml
-			.println("<td width='13%' bgcolor='' align='center'><b><font color='#000000' face='Tahoma' size='2'>CurrentTime</font></b></td>");
+			.println("<td width='13%' bgcolor='' align='center'><b><font color='#000000' face='VERDANA' size='2'>Time</font></b></td>");
 			printHtml.println("</tr>");
 		} catch (Exception ex) {
 			ex.printStackTrace();

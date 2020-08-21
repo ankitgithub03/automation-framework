@@ -2,6 +2,7 @@ package ui.app.android;
 
 import io.appium.java_client.MobileElement;
 import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.remote.AndroidMobileCapabilityType;
 import io.appium.java_client.remote.MobileCapabilityType;
 import java.net.URL;
 import org.openqa.selenium.WebDriver;
@@ -16,58 +17,61 @@ public class Androiddriver extends Drivers {
 
   private static Logger log = LoggerFactory.getLogger(Androiddriver.class);
 
-  public WebDriver createAndroidDriver(String deviceID, boolean noReset, boolean permission)
+  public synchronized WebDriver createAndroidDriver(String deviceID, boolean noReset, boolean permission)
       throws Exception {
     WebDriver driver = null;
+    new AndroidUtility().clearLogcat(deviceID);
+    new AndroidUtility().pressAndroidHomeKey(deviceID);
     try {
       desiredCapabilities = DesiredCapabilities.android();
-      String appiumServiceUrl = Drivers.getAppiumServerService().getUrl().toString();
+      String appiumServiceUrl = Drivers.getAppiumServerService(Integer.parseInt(DriverFactory.getTestDetails("port").trim())).getUrl().toString();
       log.info("Appium service url for driver is " + appiumServiceUrl);
       System.out.println("Appium service url for driver is " + appiumServiceUrl);
-      int sysPort = new JavaWrappers().getAvailablePort(8200, 8299);
-
+      int sysPort = new JavaWrappers().getAvailablePort(5999, 5000);
       desiredCapabilities.setCapability(MobileCapabilityType.NO_RESET, noReset);
-      desiredCapabilities.setCapability(MobileCapabilityType.NEW_COMMAND_TIMEOUT,
-          DriverFactory.environment
-              .get("NEW_COMMAND_TIMEOUT"));  // driver will close if no interaction in 20 min
-      desiredCapabilities
-          .setCapability(MobileCapabilityType.DEVICE_NAME, Drivers.getDeviceName(deviceID));
+      desiredCapabilities.setCapability(MobileCapabilityType.NEW_COMMAND_TIMEOUT, (Integer.parseInt(DriverFactory.environment.get("appiumNewCommandTimeOut"))*60));
+      desiredCapabilities.setCapability(MobileCapabilityType.DEVICE_NAME, DriverFactory.getTestDetails("deviceName"));
       desiredCapabilities.setCapability(MobileCapabilityType.PLATFORM_NAME, "Android");
-      desiredCapabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION,
-          Drivers.getdeviceOsVersion(deviceID));
+      desiredCapabilities.setCapability(MobileCapabilityType.PLATFORM_VERSION, DriverFactory.getTestDetails("deviceOsVersion"));
       desiredCapabilities.setCapability(MobileCapabilityType.UDID, deviceID);
+//      desiredCapabilities.setCapability(MobileCapabilityType.APP, DriverFactory.environment.get("appPath"));
       desiredCapabilities.setCapability(MobileCapabilityType.TAKES_SCREENSHOT, true);
-      desiredCapabilities.setCapability("autoGrantPermissions", permission);
       desiredCapabilities.setCapability(MobileCapabilityType.AUTOMATION_NAME, "UiAutomator2");
-      desiredCapabilities.setCapability(MobileCapabilityType.APPLICATION_NAME,
-          DriverFactory.environment.get("appName"));
+      desiredCapabilities.setCapability(MobileCapabilityType.APPLICATION_NAME, DriverFactory.environment.get("appName"));
+      desiredCapabilities.setCapability(AndroidMobileCapabilityType.AUTO_GRANT_PERMISSIONS,permission);
+      desiredCapabilities.setCapability(AndroidMobileCapabilityType.BROWSER_NAME,"");
 //				capabilities.setCapability("skipDeviceInitialization", true);
 //				capabilities.setCapability("skipServerInstallation", true);
 //				capabilities.setCapability(CapabilityType.BROWSER_NAME, "");
 //				capabilities.setCapability("clearDeviceLogsOnStart", true);
-      desiredCapabilities.setCapability("autoWebview", true);
-      desiredCapabilities.setCapability("printPageSourceOnFindFailure", true);
-      desiredCapabilities.setCapability("appPackage", DriverFactory.environment.get("App_Package"));
-      desiredCapabilities
-          .setCapability("appActivity", DriverFactory.environment.get("App_Activity"));
-      desiredCapabilities.setCapability("systemPort", sysPort);
-      desiredCapabilities.setCapability("noSign", true);
+      desiredCapabilities.setCapability(AndroidMobileCapabilityType.AUTO_LAUNCH,true);
+//      desiredCapabilities.setCapability("appium:printPageSourceOnFindFailure", true);
+      desiredCapabilities.setCapability(AndroidMobileCapabilityType.APP_PACKAGE, DriverFactory.environment.get("appPackage"));
+      desiredCapabilities.setCapability(AndroidMobileCapabilityType.APP_ACTIVITY, DriverFactory.environment.get("appActivity"));
+      desiredCapabilities.setCapability(AndroidMobileCapabilityType.SYSTEM_PORT, sysPort);
+      desiredCapabilities.setCapability(AndroidMobileCapabilityType.NO_SIGN, true);
       try {
-        driver = new AndroidDriver<MobileElement>(new URL(appiumServiceUrl),
-            desiredCapabilities);
-        System.out.println("Android driver started");
+        driver = new AndroidDriver<MobileElement>(new URL(appiumServiceUrl), desiredCapabilities);
+        log.info("Android driver stated on device: "+deviceID);
+        waitForAppToBeInForeground(driver,DriverFactory.environment.get("appPackage"));
+        Drivers.setWebDriver(driver);
+        generateScreenshots();
+        JavaWrappers.sleep(1);
       } catch (Exception e) {
         System.err
-            .println("Unable to initiate Android Driver on: " + Drivers.getDeviceName(deviceID));
+            .println("Unable to initiate Android Driver on: " + DriverFactory.deviceDetails.get(deviceID + "_deviceName"));
         e.printStackTrace();
+        throw new Exception("Unable to create Android driver "+e.getMessage());
       }
-      Drivers.setWebDriver(driver);
     } catch (Exception e) {
       e.printStackTrace();
+      DriverFactory.offlineDevices.add(deviceID);
       throw new Exception("No Device connected " + deviceID);
     }
     return driver;
   }
+
+
 
 
 }

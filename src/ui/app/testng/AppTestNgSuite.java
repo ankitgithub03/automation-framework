@@ -10,61 +10,50 @@ import test.DriverFactory;
 import test.TestNgSuite;
 import ui.app.android.AndroidUtility;
 import ui.driverUtils.AppiumServer;
+import ui.driverUtils.FindLocators;
+import utils.JavaWrappers;
 import utils.MachineSearch;
 import utils.ReadLocatorsXmlFile;
 
-public class AppTestNgSuite implements TestNgSuite {
+public class AppTestNgSuite extends TestNgSuite {
 
   private static Logger log = LoggerFactory.getLogger(AppTestNgSuite.class);
 
-  String finalReportFile = "";
-  static int parallelSuitesCounter = 0;
-
+  private String finalReportFile = "";
 
   /**
    * Below are the setup done in Before Suite
    *
-   * @param itx
-   * 1. get the configuration file and read all values from configurations file and save
-   *    into environment variable
-   *2. Initialize the report folder structure
+   * @param itx 1. get the configuration file and read all values from configurations file and save
+   *            into environment variable 2. Initialize the report folder structure
    */
-  @BeforeSuite
   @Override
+  @BeforeSuite(alwaysRun = true)
   public void initializeSuite(ITestContext itx) throws IOException {
-    String configureFile = new MachineSearch().searchMachineForFile(projDir, "Configuration.xml");
-    DriverFactory.environment = new ReadLocatorsXmlFile()
-        .getXMLNodeValue(configureFile, "configuration");
-    DriverFactory.setEnv(DriverFactory.environment.get("environment"));
-    finalReportFile = finalReport
-        .initializeFinalUIReport(itx.getCurrentXmlTest().getSuite().getName(),
-            DriverFactory.environment.get("productName"));
-    log.info(finalReportFile);
-    if (DriverFactory.environment.get("OSType").equalsIgnoreCase("android")
-        || DriverFactory.environment.get("OSType").equalsIgnoreCase("ios")) {
-
-      new AppiumServer().startAppiumServer();
+    setupEnvironmentAndConfig();
+    initializeLocatorsFile();
+    if (DriverFactory.environment.get("driverType").equalsIgnoreCase("android")
+        || DriverFactory.environment.get("driverType").equalsIgnoreCase("ios")) {
+      reserveDevices(itx);
     }
-
+    setupReport();
   }
 
   @Override
-  @AfterSuite
+  @AfterSuite(alwaysRun = true)
   public void tearDownSuite() {
-    finalReport.completeFinalReportFileFooter();
-
+    mailReport.createConsolidateReport();
     // send mail code
-    if (DriverFactory.environment.get("OSType").equalsIgnoreCase("android")
-        || DriverFactory.environment.get("OSType").equalsIgnoreCase("ios")) {
-      getTotalDeviceConnected();
-      reserveDevices();
+    if (DriverFactory.environment.get("driverType").equalsIgnoreCase("android")
+        || DriverFactory.environment.get("driverType").equalsIgnoreCase("ios")) {
       new AppiumServer().killAllAppiumServer();
     }
+
 
   }
 
   private void getTotalDeviceConnected() {
-    if (DriverFactory.environment.get("OSType").equalsIgnoreCase("android")) {
+    if (DriverFactory.environment.get("driverType").equalsIgnoreCase("android")) {
       AndroidUtility ads = new AndroidUtility();
       DriverFactory.connectedDevices = ads.getConnectedDevices();
     } else {
@@ -72,17 +61,22 @@ public class AppTestNgSuite implements TestNgSuite {
     }
   }
 
-  public void reserveDevices() {
-    for (int i = 0; i < DriverFactory.connectedDevices.size(); i++) {
-      String deviceID = DriverFactory.connectedDevices.get(i);
-      if (new AndroidUtility()
-          .networkSetUp(DriverFactory.environment.get("networkTYpe"), deviceID)) {
-        DriverFactory.availableDevices.add(deviceID);
-        String deviceName = new AndroidUtility().getDeviceName(deviceID);
-        String androidVersion = new AndroidUtility().getDeviceAndroidVersion(deviceID);
-        DriverFactory.deviceDetails.put(deviceID + "_" + "deviceName", deviceName);
-        DriverFactory.deviceDetails.put(deviceID + "_" + "androidVersion", androidVersion);
+  public void reserveDevices(ITestContext itx) {
+    getTotalDeviceConnected();
+    try {
+      for (int i = 0; i < DriverFactory.connectedDevices.size(); i++) {
+        String deviceID = DriverFactory.connectedDevices.get(i);
+        if (new AndroidUtility()
+            .networkSetUp(DriverFactory.environment.get("networkType"), deviceID)) {
+          String deviceName = new AndroidUtility().getDeviceName(deviceID);
+          String deviceOsVersion = new AndroidUtility().getDeviceAndroidVersion(deviceID);
+          DriverFactory.deviceDetails.put(deviceID + "_" + "deviceName", deviceName);
+          DriverFactory.deviceDetails.put(deviceID + "_" + "deviceOsVersion", deviceOsVersion);
+          DriverFactory.availableDevices.add(deviceID);
+        }
       }
+    }catch (Exception e){
+      e.printStackTrace();
     }
     log.info("Total connected devices are: " + DriverFactory.connectedDevices.size());
     log.info("Total available devices are: " + DriverFactory.availableDevices.size());
@@ -91,7 +85,11 @@ public class AppTestNgSuite implements TestNgSuite {
       System.err.println("There is no device available to run the suite");
       System.exit(0);
     }
+    itx.getCurrentXmlTest().getSuite().setDataProviderThreadCount(DriverFactory.availableDevices.size());
+    itx.getCurrentXmlTest().getSuite().setPreserveOrder(false);
   }
+
+
 
 
 }

@@ -1,7 +1,6 @@
 package ui.app.android;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import test.DriverFactory;
 import ui.driverUtils.Drivers;
@@ -17,7 +16,7 @@ public class AndroidUtility extends AndroidCommands {
     if (!((String) result[0]).isEmpty()) {
       appVersion = ((String) result[0]).split("=")[1].trim();
     }
-    return appVersion;
+    return appVersion.replaceAll("\n","").trim();
   }
 
   public String getInstalledAppBuildVersion(String deviceID, String packageName) {
@@ -27,25 +26,30 @@ public class AndroidUtility extends AndroidCommands {
     if (!((String) result[0]).isEmpty()) {
       appBuildVersion = JavaWrappers.getNumericValue((String) result[0]);
     }
-    return appBuildVersion;
+    return appBuildVersion.replaceAll("\n","").trim();
   }
 
   public List<String> getConnectedDevices() {
     List<String> devices = new ArrayList<String>();
-    String command = getCommand(connected_android_devices);
-//		resultSet = new ExecuteCommand().getAllDataFromCommand_v1(command);
-    Object[] result = new ExecuteCommand().executeCommand(command, 2, true, true, 2);
-    String[] resultSet = ((String) result[0]).split("\n");
-    for (String device : resultSet) {
-      device = device.replaceAll("\\n", "");
-      if (!device.contains("List of devices attached") && !device.isEmpty()) {
-        device = device.replace("device", "");
-        device = device.trim();
-        devices.add(device);
+    try {
+      Object[] result = new ExecuteCommand()
+          .executeCommand(connected_android_devices, 2, true, true, 2);
+      String[] resultSet = ((String) result[0]).split("List of devices attached")[1].split("\n");
+      for (String device : resultSet) {
+        device = device.replaceAll("\\n", "");
+        if (!device.contains("List of devices attached") && !device.isEmpty()) {
+          device = device.replace("device", "");
+          device = device.trim();
+          devices.add(device);
+        }
       }
-    }
-    if (devices.size() == 0) {
-      System.err.print("No Device connected, Please connect any Android devices");
+      if (devices.size() == 0) {
+        System.err.print("No Device connected, Please connect Android devices");
+        System.exit(0);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.err.print("No Device connected, Please connect Android devices");
       System.exit(0);
     }
     return devices;
@@ -101,14 +105,14 @@ public class AndroidUtility extends AndroidCommands {
   public String getDeviceAndroidVersion(String deviceID) {
     String cmdQuery = getCommand(android_OS_version, deviceID);
     Object[] result = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 2);
-    return (String) result[0];
+    return ((String) result[0]).replaceAll("\n","").trim();
   }
 
 
   public String getDeviceAndroidSDKVersion(String deviceID) {
     String cmdQuery = getCommand(android_SDK_version, deviceID);
     Object[] result = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 2);
-    return (String) result[0];
+    return ((String) result[0]).replaceAll("\n","").trim();
   }
 
 
@@ -121,11 +125,16 @@ public class AndroidUtility extends AndroidCommands {
   public String getDeviceName(String deviceID) {
     String cmdQuery = getCommand(android_device_brandName, deviceID);
     Object[] result = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 1);
-    String brand = (String) result[0];
+    String brand = ((String) result[0]).replaceAll("\n","").trim();
 
+    if(brand.isEmpty()) {
+      cmdQuery = getCommand(android_device_manufacture, deviceID);
+      result = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 1);
+      brand = ((String) result[0]).replaceAll("\n", "").trim();
+    }
     cmdQuery = getCommand(android_device_model_number, deviceID);
     result = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 1);
-    String modelNumber = (String) result[0];
+    String modelNumber = ((String) result[0]).replaceAll("\n","").trim();
     if (brand.isEmpty()) {
       return modelNumber;
     } else {
@@ -190,15 +199,9 @@ public class AndroidUtility extends AndroidCommands {
 		Object[] result = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 1);
   }
 
-  public void clearLogCat(String deviceID) {
-    String cmdQuery = getCommand(clearLogCat_logs, deviceID);
-		Object[] result = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 1);
-  }
-
   public String getCrashLog(String deviceID) {
-    LinkedHashSet<String> resultSet = new LinkedHashSet<>();
     String cmdQuery = getCommand(crash_logs, deviceID);
-		Object[] result = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 5);
+		Object[] result = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 2);
     return (String)result[0];
   }
 
@@ -257,7 +260,7 @@ public class AndroidUtility extends AndroidCommands {
 
 
   public boolean isWifiPresent(String browser, String wifiName, String deviceID) throws Exception {
-    String network = DriverFactory.environment.get("network").trim();
+    String network = DriverFactory.environment.get("networkType").trim();
     if (network.trim().equalsIgnoreCase("")) {
       network = "wifi";
     }
@@ -296,13 +299,12 @@ public class AndroidUtility extends AndroidCommands {
   public String getNetworkIPAddress(boolean wifi, String udid){
     String port = "wlan";
     if (!wifi) {
-      port = "rmnet";
+      port = "(rmnet|ccmni)";
     }
-		String cmdQuery = getCommand(wifi_ip, udid,port);
+
+//    String cmdQuery = "adb -s "+udid+" shell ip route | grep \""+port+".*link.*src\" | awk \'{print $9}\'";
+    String cmdQuery = "adb -s "+udid+" shell ip route | grep -E \""+port+".*link.*src\" | awk \'{print $9}\'";
 		Object[] output = new ExecuteCommand().executeCommand(cmdQuery, 1, true, true, 1);
-//    String output = runCommandUsingTerminal(devicefarm,
-//        "adb -s " + deviceId + " shell ip route | grep '" + port
-//            + ".*link.*src' | awk '{print $9}'", false, "1");
     return ((String) output[0]).trim().split("\n")[0];
   }
 
@@ -316,8 +318,8 @@ public class AndroidUtility extends AndroidCommands {
         if (output.trim().equalsIgnoreCase("")) {
           new ExecuteCommand()
               .executeCommand(getCommand(airplane_mode_off, udid), 1, true, true, 1);
-          new ExecuteCommand()
-              .executeCommand(getCommand(airplane_mode1_off, udid), 1, true, true, 1);
+//          new ExecuteCommand()
+//              .executeCommand(getCommand(airplane_mode1_off, udid), 1, true, true, 1);
 //          this.networkToggle(udid, Arrays.asList("wifi", "data", "airplane"), Arrays.asList(false, true, false));
           success = this.waitForWifi(false, udid);
           if (!success) {
@@ -342,7 +344,7 @@ public class AndroidUtility extends AndroidCommands {
         }
       } else if (network.trim().equalsIgnoreCase("airplane")) {
         new ExecuteCommand().executeCommand(getCommand(airplane_mode_on, udid), 1, true, true, 1);
-        new ExecuteCommand().executeCommand(getCommand(airplane_mode1_on, udid), 1, true, true, 1);
+//        new ExecuteCommand().executeCommand(getCommand(airplane_mode1_on, udid), 1, true, true, 1);
 //        this.networkToggle(udid, Arrays.asList("wifi", "data", "airplane"), Arrays.asList(false, false, true));
         success = this.waitForWifi(false, udid);
         if (!success) {
@@ -353,7 +355,7 @@ public class AndroidUtility extends AndroidCommands {
       output = this.getNetworkIPAddress(true, udid);
       if (output.trim().equalsIgnoreCase("")) {
         new ExecuteCommand().executeCommand(getCommand(airplane_mode_off, udid), 1, true, true, 1);
-        new ExecuteCommand().executeCommand(getCommand(airplane_mode1_off, udid), 1, true, true, 1);
+//        new ExecuteCommand().executeCommand(getCommand(airplane_mode1_off, udid), 1, true, true, 1);
         new ExecuteCommand().executeCommand(getCommand(enable_wifi1, udid), 1, true, true, 1);
 //        this.networkToggle(udid, Arrays.asList("wifi", "data", "airplane"), Arrays.asList(true, false, false));
         success = this.waitForWifi(true, udid);
@@ -469,7 +471,7 @@ public class AndroidUtility extends AndroidCommands {
     String output = getNetworkIPAddress(true, udid);
     if (output.trim().equalsIgnoreCase("")) {
       new ExecuteCommand().executeCommand(getCommand(airplane_mode_off,udid),1,true,true,1);
-      new ExecuteCommand().executeCommand(getCommand(airplane_mode1_off,udid),1,true,true,1);
+//      new ExecuteCommand().executeCommand(getCommand(airplane_mode1_off,udid),1,true,true,1);
       new ExecuteCommand().executeCommand(getCommand(enable_wifi1,udid),1,true,true,1);
       boolean success = waitForWifi(true, udid);
       if (!success) {
@@ -483,7 +485,7 @@ public class AndroidUtility extends AndroidCommands {
 
   public String getOperatorName(String udid) {
     String operator = "";
-    if (DriverFactory.environment.get("OSType").equalsIgnoreCase("ios")) {
+    if (DriverFactory.environment.get("driverType").equalsIgnoreCase("ios")) {
 //      operator = getIOSDeviceDetails(
 //          "CarrierBundleInfoArray | grep CFBundleIdentifier | awk '{print $2}'", udid);
 //      operator = operator.trim().split("\n")[0];
@@ -491,7 +493,7 @@ public class AndroidUtility extends AndroidCommands {
 //      //Do Nothing
     } else {
       String operatorCommand = getCommand(sim_operator, udid);
-      Object[] output = new ExecuteCommand().executeCommand(operatorCommand, 1, true, false);
+      Object[] output = new ExecuteCommand().executeCommand(operatorCommand, 1, true, true,1);
       operator = ((String) output[0]).split("\n")[0];
     }
     if (operator.trim().length() < 2) {
@@ -615,6 +617,21 @@ public class AndroidUtility extends AndroidCommands {
     new ExecuteCommand().executeCommand(command, 1, false, false);
   }
 
+  public void pressAndroidHomeKey(String deviceID){
+    String command = getCommand(press_homeKey,deviceID);
+    new ExecuteCommand().executeCommand(command,1,false,true);
+  }
+
+  public void captureScreenshot(String deviceID,String path){
+    String command = getCommand(captureScreenshots,deviceID,path);
+    new ExecuteCommand().executeCommand(command,1,false,true,1);
+  }
+
+  public void clearLogcat(String deviceID) {
+    String command = getCommand(clearLogcat, deviceID);
+    Thread t = new Thread(() -> new ExecuteCommand().executeCommand(command, 1, false, false, 1));
+    t.start();
+  }
 
 
 

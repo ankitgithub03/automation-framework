@@ -89,28 +89,36 @@ public class GifSequenceWriter {
 	    rootNode.appendChild(node);
 	    return(node);
 	  }
-	  
-	  public static void generateGif(String path, String[] files, String gifname, int timeBetweenFramesMS) throws Exception {
-	      BufferedImage firstImage = ImageIO.read(new File(path + files[0]));
-	      ImageOutputStream output = new FileImageOutputStream(new File(path + gifname));
-	      int imageType = BufferedImage.TYPE_INT_ARGB;
-	      GifSequenceWriter writer = new GifSequenceWriter(output, imageType, timeBetweenFramesMS, false);
-	      writer.writeToSequence(firstImage);
-	      for(int i=1; i<files.length; i++) {
-	    	  BufferedImage nextImage = null;
-	    	  try {
-	    		  nextImage = ImageIO.read(new File(path + files[i]));
-	    	  } catch(Exception ex) {
-	    		  // Do nothing
-	    	  }
-	    	  if(nextImage != null) {
-	    		  writer.writeToSequence(nextImage);
-	    		  deleteFile(new File(path + files[i]));
-	    	  }
-	      }
-	      deleteFile(new File(path + files[0]));
-	      writer.close();
-	      output.close();
+
+	  public static void generateGif(String path, String gifname, int timeBetweenFramesMS){
+       path = path+File.separator;
+	  	  File[] files = new File(path).listFiles();
+	  	  try {
+          assert files != null;
+          BufferedImage firstImage = ImageIO.read(new File(path + files[0].getName()));
+          ImageOutputStream output = new FileImageOutputStream(new File(path + gifname));
+          int imageType = BufferedImage.TYPE_INT_ARGB;
+          GifSequenceWriter writer = new GifSequenceWriter(output, imageType, timeBetweenFramesMS,
+              false);
+          writer.writeToSequence(firstImage);
+          for (int i = 1; i < files.length; i++) {
+            BufferedImage nextImage = null;
+            try {
+              nextImage = ImageIO.read(new File(path + files[i].getName()));
+            } catch (Exception ex) {
+              // Do nothing
+            }
+            if (nextImage != null) {
+              writer.writeToSequence(nextImage);
+              deleteFile(new File(path + files[i].getName()));
+            }
+          }
+          deleteFile(new File(path + files[0].getName()));
+          writer.close();
+          output.close();
+        }catch(Exception e){
+	  	    e.printStackTrace();
+        }
 	  }
 	  
 	  static void deleteFile(File element) {

@@ -362,7 +362,7 @@ public class JavaWrappers {
     int portNumber = getRandoNumber(high, low);
     try {
       new ServerSocket(portNumber).close();
-      System.out.println("port is available " + portNumber);
+//      System.out.println("port is available " + portNumber);
     } catch (Exception e) {
       System.err.println("port " + portNumber + " is not available");
       try {
@@ -583,7 +583,7 @@ public class JavaWrappers {
       Thread.sleep(seconds * 1000);
     }catch (Exception e){
       e.printStackTrace();
-      log.info("Threw a Exception in BaseUtil::wait, full stack trace follows:", e);
+//      log.info("Threw a Exception in BaseUtil::wait, full stack trace follows:", e);
     }
   }
 

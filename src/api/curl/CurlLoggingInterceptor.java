@@ -7,14 +7,14 @@ import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import report.allure.Reporting;
+import report.custom.TestReporting;
 
 public class CurlLoggingInterceptor implements HttpRequestInterceptor {
 
   private final static Logger log = LoggerFactory.getLogger(CurlLoggingInterceptor.class);
   private final boolean logStacktrace;
   private final boolean printMultiliner;
-  private final Reporting reporting;
+  private final TestReporting reporting;
 
   protected CurlLoggingInterceptor(CurlLoggingInterceptor.Builder b) {
     this.logStacktrace = b.logStacktrace;
@@ -58,7 +58,7 @@ public class CurlLoggingInterceptor implements HttpRequestInterceptor {
 
     private boolean logStacktrace = false;
     private boolean printMultiliner = false;
-    private Reporting reporting;
+    private TestReporting reporting;
 
     public Builder() {
     }
@@ -83,7 +83,7 @@ public class CurlLoggingInterceptor implements HttpRequestInterceptor {
       return this;
     }
 
-    public CurlLoggingInterceptor.Builder setReporting(Reporting reporting) {
+    public CurlLoggingInterceptor.Builder setReporting(TestReporting reporting) {
       this.reporting = reporting;
       return this;
     }

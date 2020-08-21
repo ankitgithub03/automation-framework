@@ -1,10 +1,19 @@
 package test;
 
+import io.restassured.response.Response;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import net.lightbody.bmp.BrowserMobProxy;
 import report.custom.FeatureReporting;
 import report.custom.TestReporting;
+import utils.CustomizeAssert;
+import utils.HashMapNew;
+import org.openqa.selenium.Proxy;
 
 public class DriverFactory {
 
@@ -14,7 +23,7 @@ public class DriverFactory {
   /**
    * All Suite configuration values {@link HashMap} of type (String, String)
    */
-  public static HashMap<String, String> environment = new HashMap<String, String>();
+  public static HashMapNew environment = new HashMapNew();
 
 
   /**
@@ -47,7 +56,11 @@ public class DriverFactory {
   /**
    * All free devices udid value {@link HashMap} of type (String, String)
    */
-  public static List<String> freeDevices = new ArrayList<String>();
+  public static List<String> offlineDevices = new ArrayList<String>();
+
+  public static HashMap<String, Object> sTestData = new HashMap<>();
+
+  public static TreeSet<String> tags = new TreeSet<>();
 
 
   /**
@@ -60,33 +73,37 @@ public class DriverFactory {
    * Have all the data from the object repository contains as PageName, Page Element name, locators and their value.
    * of type HashMap({String, HashMap{String, HashMap{String, String}}})
    */
-  public static HashMap<String, HashMap<String,HashMap<String, String>>> objectRepoMapValues = new HashMap<String, HashMap<String,HashMap<String, String>>>();
+  public static HashMap<String, HashMap<String,HashMap<String, String>>> locatorsMapValues = new HashMap<String, HashMap<String,HashMap<String, String>>>();
 
-  private static InheritableThreadLocal<String> featureReportingPath = new InheritableThreadLocal<String>() {
+  private static InheritableThreadLocal<Thread> gifThread= new InheritableThreadLocal<Thread>(){
     @Override
-    protected String initialValue() {
-      return "";
-    }
-  };
-
-  private static InheritableThreadLocal<FeatureReporting> featureReporting = new InheritableThreadLocal<FeatureReporting>() {
-    @Override
-    protected FeatureReporting initialValue() {
+    protected Thread initialValue() {
       return null;
     }
   };
 
-  private static InheritableThreadLocal<HashMap<String, FeatureReporting>> featureReport = new InheritableThreadLocal<HashMap<String, FeatureReporting>>(){
+  private static InheritableThreadLocal<CustomizeAssert> assertThread = new InheritableThreadLocal<CustomizeAssert>(){
     @Override
-    protected HashMap<String, FeatureReporting> initialValue() {
-      return new HashMap<>();
+    protected CustomizeAssert initialValue(){
+      return null;
     }
   };
 
-  private static InheritableThreadLocal<HashMap<String, String>> testDetails = new InheritableThreadLocal<HashMap<String, String>>(){
+  private static InheritableThreadLocal<BrowserMobProxy> browserProxy = new InheritableThreadLocal<BrowserMobProxy>();
+
+  private static HashMap<String, FeatureReporting> featureReport = new HashMap<>();
+
+  private static InheritableThreadLocal<HashMapNew> testDetails = new InheritableThreadLocal<HashMapNew>(){
     @Override
-    protected HashMap<String, String> initialValue() {
-      return new HashMap<>();
+    protected HashMapNew initialValue() {
+      return new HashMapNew();
+    }
+  };
+
+  private static InheritableThreadLocal<List<Thread>> allTestThreads = new InheritableThreadLocal<List<Thread>>(){
+    @Override
+    protected List<Thread> initialValue(){
+      return new ArrayList<Thread>();
     }
   };
 
@@ -98,9 +115,22 @@ public class DriverFactory {
     }
   };
 
-  public static FeatureReporting getFeatureReporting(){
-    return featureReporting.get();
-  }
+  private static InheritableThreadLocal<Response> sResponse = new InheritableThreadLocal<Response>(){
+    @Override public Response initialValue() {
+      return null;
+    }
+  };
+
+  private static InheritableThreadLocal<HashMap<String, Response>> sResponseMap = new InheritableThreadLocal<HashMap<String, Response>>(){
+    @Override public HashMap<String, Response> initialValue() {
+      return new HashMap<String, Response>();
+    }
+  };
+
+  // it will has featureName -> (testCaseName report Link, status)
+  public static Set<String> modules = new HashSet<>();
+
+  public static List<HashMapNew> results = new ArrayList<>();
 
   public static void setTestReporting(TestReporting tr){
     testReporting.set(tr);
@@ -119,22 +149,27 @@ public class DriverFactory {
   }
 
   public static FeatureReporting getFeatureReport(String featureName){
-    return featureReport.get().get(featureName);
+    return featureReport.get(featureName);
   }
 
   public static void setFeatureReport(String featureName, FeatureReporting featureReporting){
-    HashMap<String, FeatureReporting> map = new HashMap<>();
-    map.put(featureName,featureReporting);
-    featureReport.set(map);
+    featureReport.put(featureName,featureReporting);
   }
 
   public static void setTestDetails(String key, String value){
-    HashMap<String, String> map = new HashMap<>();
-    testDetails.set(map);
+    testDetails.get().put(key,value);
+  }
+
+  public static void setTestDetails(HashMapNew map){
+    testDetails.get().putAll(map);
   }
 
   public static String getTestDetails(String key){
-    return testDetails.get().get(key);
+      return testDetails.get().get(key).trim();
+  }
+
+  public static HashMapNew getWholeTestDetails(){
+    return testDetails.get();
   }
 
   public static void removeTestDetails(){
@@ -145,6 +180,31 @@ public class DriverFactory {
     testReporting.remove();
   }
 
+  public static void setGifThread(Thread thread){ gifThread.set(thread);}
+  public static Thread getGifThread(){return gifThread.get();}
+  public static void setAssert(CustomizeAssert customizeAssert){assertThread.set(customizeAssert);}
+  public static CustomizeAssert getAssert(){return assertThread.get();}
+  public static void setBrowserMobProxy(BrowserMobProxy proxy){browserProxy.set(proxy);}
+  public static BrowserMobProxy getBrowserMobProxy(){return browserProxy.get();}
+  public static void setThread(Thread t){
+    allTestThreads.get().add(t);
+  }
+
+  public static List<Thread> getAllThreads(){
+    return allTestThreads.get();
+  }
+
+  public static Response getResponse() {
+    return sResponse.get();
+  }
+
+  public static void setResponse(Response response) { sResponse.set(response); }
+
+  public static Response getResponse(String key) {
+    return sResponseMap.get().get(key);
+  }
+
+  public static void setResponse(String key, Response response) { sResponseMap.get().put(key, response); }
 
 
 }

@@ -5,7 +5,8 @@ import test.Constants;
 
 public abstract class AndroidCommands {
 
-  String connected_android_devices = "(lsof -i tcp:5037 | grep LISTEN | awk '{print $2}' | xargs kill -9) && (adb devices)";
+  String connected_android_devices1 = "(lsof -i tcp:5037 | grep LISTEN | awk \''{print $2}\'' | xargs kill -9) && (adb devices)";
+  String connected_android_devices = "adb devices";
   String android_OS_version = "adb -s {0} shell getprop ro.build.version.release";
   String android_SDK_version = "adb -s {0} shell getprop ro.build.version.sdk";
   String android_device_brandName = "adb -s {0} shell getprop ro.vendor.product.brand";
@@ -31,7 +32,7 @@ public abstract class AndroidCommands {
 
   String deepLinks = "adb -s {0} shell am start -a {1} -d {2} ";
 
-  String clearLogCat_logs = "adb -s {0} shell logcat -c";
+  String clearLogcat = "adb -s {0} shell logcat -c";
   String crash_logs = "adb -s {0} shell logcat -b crash";
   String clean_cache = "adb -s {0} shell pm clear {1}";
   String capture_httpLogs = "adb -s {0} logcat | grep \"D OkHttp  \"";
@@ -58,7 +59,7 @@ public abstract class AndroidCommands {
   String checkIfSimIsInRoaming = "gsm.operator.isroaming";
   String mcc = "gsm.sim.operator.numeric";
   String is_wifi_present = "adb -s {0} shell dumpsys netstats | grep -E \"iface=wlan.*networkId\"";
-  String wifi_ip = "adb -s {0} shell ip route | grep \"{1} .*link.*src\" | awk \"{print $9}\"";
+  String wifi_ip = "adb -s {0} shell ip route | grep \"{1} .*link.*src\" | awk \''{print $9}\''";
   String airplane_mode_off = "adb -s {0} shell settings put global airplane_mode_on 0";
   String airplane_mode_on = "adb -s {0} shell settings put global airplane_mode_on 1";
   String airplane_mode1_off = "adb -s {0} shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state false";
@@ -75,7 +76,7 @@ public abstract class AndroidCommands {
 
   String appPID = "adb -s {0} shell pidof -s {1}";
   String getAudioState = "adb -s {0} shell dumpsys audio | grep -H \"{1} -- state\"";
-
+  String captureScreenshots = "adb -s {0} exec-out screencap -p >{1}";  // {0}- deviceID, {1}- path of the screenshot
 
   String killAll_node = "killall -9 node";
 
@@ -85,7 +86,6 @@ public abstract class AndroidCommands {
     String command = MessageFormat.format(key, (Object[]) params);
     return command;
   }
-
 
 
   public static String getAudioStateCommand(String pid){

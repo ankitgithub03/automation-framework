@@ -98,8 +98,8 @@ public class ReadLocatorsXmlFile {
    * @param parentNode
    * @return
    */
-  public HashMap<String, String> getXMLNodeValue(String path, String parentNode){
-    HashMap<String, String> map = new HashMap<>();
+  public HashMapNew getXMLNodeValue(String path, String parentNode){
+    HashMapNew map = new HashMapNew();
     try
     {
       File fXmlFile = new File(path);

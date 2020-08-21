@@ -9,7 +9,7 @@ import lombok.Setter;
 @Data
 public class ApiRequestDto {
 
-  private String api_name;
+  private String apiName;
   private String method;
   private String url;
   private String hostName;
