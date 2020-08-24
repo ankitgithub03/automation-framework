@@ -160,6 +160,7 @@ public abstract class TestNgMethods {
       Thread t = new Thread(() -> GifSequenceWriter
           .generateGif(DriverFactory.getTestReporting().getGifFolder(), "video.gif", 500));
       t.start();
+      JavaWrappers.sleep(2);
       String filePath = "./"+test+"_gif/video.gif";
       DriverFactory.setTestDetails("videoGifPath",filePath);
       DriverFactory.setThread(t);

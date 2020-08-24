@@ -92,9 +92,9 @@ public class GifSequenceWriter {
 
 	  public static void generateGif(String path, String gifname, int timeBetweenFramesMS){
        path = path+File.separator;
-	  	  File[] files = new File(path).listFiles();
+
 	  	  try {
-          assert files != null;
+					File[] files = new File(path).listFiles();
           BufferedImage firstImage = ImageIO.read(new File(path + files[0].getName()));
           ImageOutputStream output = new FileImageOutputStream(new File(path + gifname));
           int imageType = BufferedImage.TYPE_INT_ARGB;
@@ -117,7 +117,7 @@ public class GifSequenceWriter {
           writer.close();
           output.close();
         }catch(Exception e){
-	  	    e.printStackTrace();
+//	  	    e.printStackTrace();
         }
 	  }
 	  

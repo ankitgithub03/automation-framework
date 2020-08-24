@@ -28,7 +28,7 @@ public class CustomizeAssert extends Assertion {
 		}
 		String expectedMessage = assertCommand.getExpected() == null ? "NULL" : getValues(assertCommand.getExpected());
 		String actualMessage =  assertCommand.getActual() == null ? "NULL" : getValues(assertCommand.getActual());
-		reporting.log(message,"Expected: "+expectedMessage+" Actual: "+actualMessage, "Pass");
+		reporting.log(message,"Expected is: "+expectedMessage+" and Actual is: "+actualMessage, "Pass");
 	}
 	 
 	@SneakyThrows
@@ -41,10 +41,10 @@ public class CustomizeAssert extends Assertion {
 		String expectedMessage = assertCommand.getExpected() == null ? "NULL" : getValues(assertCommand.getExpected());
 		String actualMessage =  assertCommand.getActual() == null ? "NULL" : getValues(assertCommand.getActual());
 		if(ex.getCause() == null){
-			reporting.log(message,"Expected: "+expectedMessage+" Actual"+actualMessage + "<Br/>" + ex.toString(), "Fail");
+			reporting.log(message,"Expected is: "+expectedMessage+" and Actual is: "+actualMessage + "<Br/>" + ex.toString(), "Fail");
 		}
 		else{
-			reporting.log(message,"Expected: "+expectedMessage+" Actual"+actualMessage + "<Br/>" + ex.toString(), "Fail");
+			reporting.log(message,"Expected is: "+expectedMessage+" and Actual is: "+actualMessage + "<Br/>" + ex.toString(), "Fail");
 		}
 	}
 
@@ -57,6 +57,6 @@ public class CustomizeAssert extends Assertion {
 		}
 		String expectedMessage = assertCommand.getExpected() == null ? "NULL" : getValues(assertCommand.getExpected());
 		String actualMessage =  assertCommand.getActual() == null ? "NULL" : getValues(assertCommand.getActual());
-		reporting.log(message,"Expected: "+expectedMessage+" Actual: "+actualMessage, "Pass");
+		reporting.log(message,"Expected is: "+expectedMessage+" and Actual is: "+actualMessage, "Pass");
 	}
 }

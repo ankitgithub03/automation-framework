@@ -47,10 +47,9 @@ public class CurlLoggingInterceptor implements HttpRequestInterceptor {
         printStacktrace(message);
       }
       log.info(message.toString());
-//      this.reporting
-//          .log("Generating Curl Command for HTTP request", "Curl Command", message.toString(), "Done");
+      this.reporting.log("Curl Command", message.toString(), "Done");
     } catch (Exception var5) {
-//      this.reporting.log("Failed to generate CURL command for HTTP request", "Exception Message", var5.getMessage(), "Done");
+      this.reporting.log("Failed to generate CURL command for HTTP request", "Exception Message"+var5.getMessage(), "Done");
     }
   }
 

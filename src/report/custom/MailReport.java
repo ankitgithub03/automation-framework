@@ -29,7 +29,7 @@ public class MailReport extends ReportsSession{
 	private static Logger log = LoggerFactory.getLogger(MailReport.class);
 
     public static PrintStream printStream;
-    public static long mreportStartTime = 0;
+
     private String reportStartTime = "";
     /**
      * Initializing the UI automation final report file and create the folder "Reports" directory of Project
@@ -52,10 +52,12 @@ public class MailReport extends ReportsSession{
 	public void createConsolidateReport() {
 		try {
 			openFinalReportFile();
-			OutputStream outputStream = new FileOutputStream(
-					new File(reportFolder + "/" + mailReportName), true);
-			int totalPassPercentage = ((totalPassTestCases*100) / totalTestCases);
+			String report =reportFolder+ File.separator+mailReportName;
+			OutputStream outputStream = new FileOutputStream(new File(report),true);
+			totalPassPercentage = ((totalPassTestCases*100) / totalTestCases);
+			DriverFactory.environment.put("automationPassPercentage",""+totalPassPercentage);
 			String totalTimeTaken = JavaWrappers.getTime(mreportStartTime, System.currentTimeMillis());
+			DriverFactory.environment.put("totalTimeTaken",totalTimeTaken);
 			printStream = new PrintStream(outputStream);
 			printStream.println("<html>");
 			printStream.println("<title>Automation Report</title>");
@@ -112,7 +114,7 @@ public class MailReport extends ReportsSession{
 			int totalSkip = 0;
 			for (String module : DriverFactory.modules) {
 				printStream.println("<tr align=center style='mso-height-source:userset;height:15.75pt;font-family:Arial'>");
-				printStream.println("<td " + columnStyle + ">"+module+"</td>");
+				printStream.println("<td " + columnStyle + "><b>"+module+"</b></td>");
 				long totalModuleTestCases= DriverFactory.results.stream().filter(m->m.get("FeatureName").equals(module)).count();
 				String link = DriverFactory.results.stream().filter(m -> m.get("FeatureName").equals(module)).findFirst().get().get("ModuleLink");
 				String moduleLink = totalModuleTestCases == 0 ? "#" : link;
@@ -157,6 +159,7 @@ public class MailReport extends ReportsSession{
 			printStream.println("</tr></table>");
 
 			printStream.println("</body></html>");
+			log.info("Report is: "+report);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -278,6 +281,7 @@ public class MailReport extends ReportsSession{
 			OutputStream finalHtmlFile = new FileOutputStream(new File(reportFolder + File.separator+mailReportName), true);
 			mailReportFile = reportFolder + File.separator+mailReportName;
 			printStream = new PrintStream(finalHtmlFile);
+			reportUrl = "Reports"+mailReportName;
 		}catch (Exception ex){
 		 ex.printStackTrace();
 		}
