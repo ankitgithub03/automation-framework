@@ -16,7 +16,7 @@
     <webdrivermanager.version>4.0.0</webdrivermanager.version>
     <lombok.version>1.18.12</lombok.version>
     <assertj-core.version>3.16.1</assertj-core.version>
-    <org.json.version>20200518</org.json.version>
+    <org.json.version>20230227</org.json.version>
     <commons-lang3.version>3.10</commons-lang3.version>
     <fillo.version>1.21</fillo.version>
     <allure-testng.version>2.13.0</allure-testng.version>
